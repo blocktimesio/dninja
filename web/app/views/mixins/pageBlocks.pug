@@ -1,0 +1,173 @@
+include ./articles
+include ./twitter
+
+mixin renderPageBlocks(opts)
+  each block in pageBlocks
+    section
+      ul.nav.d-flex.justify-content-between
+        if (block.title)
+          li.nav-item.mr-2
+            ul.nav
+              if (block.url)
+                li.nav-item
+                  a.nav-link.px-0(href=block.url)
+                    +icon(block.icon, 18)(class="mt-1 float-left")
+                    |#{block.title}
+              else
+                li.nav-item
+                  .nav-link.px-0
+                    +icon(block.icon, 18)(class="mt-1 float-left")
+                    |#{block.title}
+          
+          li.nav-item
+            if (block.type == `topPosts`) 
+              +renderBlockTopArticlesFilter(block)
+            if (block.type == `topTweets`) 
+              +renderBlockTopTweetsFilter(block)
+            if (block.type == `trendingCoins`)
+              ul.nav: li.nav-item: a.nav-link.px-1.px-xl-2.active(href=block.url) 24h
+      
+      hr
+
+      if (block.type == `coinsGainerLoser`) 
+        +renderBlockCoinsGainerLoser(block)
+      else if (block.type == `trendingCoins`) 
+        +renderBlockTrendingCoins(block)
+      else if (block.type == `trendingPersons`) 
+        +renderBlockTrendingPersons(block)
+      else if (block.type == `topTweets`) 
+        +renderBlockTopTweets(block)
+      else if (block.type == `topPosts`) 
+        +renderBlockTopArticles(block)
+      else if (block.type == `advertising`)
+        +renderBlockAdvertising(block)
+    
+    //- if (block.title)
+      hr
+      ul.nav.d-flex.justify-content-between(style="position: absolute")
+        li.nav-item.mr-2
+          ul.nav
+            if (block.url)
+              li.nav-item
+                a.nav-link.btn.btn-primary(href=block.url)
+                  +icon(block.icon, 18)(class="mt-1 float-left")
+                  span All #{block.title}
+
+mixin renderBlockTopArticlesFilter(blockInfo)
+  ul.nav(role="tablist")
+    if (blockInfo.data[`1`])
+      li.nav-item
+        a.nav-link.px-1.px-xl-2.active(data-toggle="tab" href=`#blockTopArticles-${blockInfo.type}-1` role="tab" aria-controls="details" aria-expanded="true") 24h
+    li.nav-item
+      a.nav-link.px-1.px-xl-2(data-toggle="tab" href=`#blockTopArticles-${blockInfo.type}-7` role="tab" aria-controls="details" aria-expanded="true", class=((blockInfo.data[`1`]) ? `` : `active`)) Week
+    li.nav-item
+      a.nav-link.px-1.px-xl-2(data-toggle="tab" href=`#blockTopArticles-${blockInfo.type}-31` role="tab" aria-controls="details" aria-expanded="true") Month
+
+mixin renderBlockTopArticles(blockInfo)
+  -
+    var opts = 
+          {
+            inAside: true,
+            url: "/articles/mng?type=post",
+            icon: "icons8-align_left",
+          }
+
+  .tab-content
+    - loopIndex = 0;
+    each periodData, period in blockInfo.data
+      - periodClass = (loopIndex == 0) ? `active` : ``
+      .tab-pane(id=`blockTopArticles-${blockInfo.type}-${period}`, role="tabpanel", class=periodClass)
+        each row in periodData
+          +articleRow(row, opts)
+      - loopIndex++;
+    
+mixin renderBlockTopTweetsFilter(blockInfo)
+  ul.nav(role="tablist")
+    if (blockInfo.data[`1`])
+      li.nav-item
+        a.nav-link.px-1.px-xl-2.active(data-toggle="tab" href=`#blockTopTweets-1` role="tab" aria-controls="details" aria-expanded="true") 24h
+    li.nav-item
+      a.nav-link.px-1.px-xl-2(data-toggle="tab" href=`#blockTopTweets-7` role="tab" aria-controls="details" aria-expanded="true", class=((blockInfo.data[`1`]) ? `` : `active`)) 7d
+    li.nav-item
+      a.nav-link.px-1.px-xl-2(data-toggle="tab" href=`#blockTopTweets-31` role="tab" aria-controls="details" aria-expanded="true") 30d
+    
+mixin renderBlockTopTweets(blockInfo)
+  .tab-content
+    - loopIndex = 0;
+    each periodData, period in blockInfo.data
+      - periodClass = (loopIndex == 0) ? `active` : ``
+      .tab-pane(id=`blockTopTweets-${period}`, role="tabpanel", class=periodClass)
+        each row in periodData
+          +tweetRow(row, 'aside')
+      - loopIndex++;
+
+mixin renderBlockAdvertising(blockInfo)
+  a(href="" target="_blank")
+    img.rounded(src="https://via.placeholder.com/270x500" width="100%" alt="")
+  
+mixin renderBlockTrendingPersons(blockInfo)
+    ul.list-unstyled.mt-3
+      each person in blockInfo.data
+        li
+          a.media.mb-3(href=`/people/${person.slug}`)
+            +personPhoto(person, 44)
+            .media-body.d-inline.align-self-center
+              b.link #{person.name}
+              +rank(person)
+              br
+              small.text-muted #{person.netWorth} BTH
+
+mixin renderBlockTrendingCoins(blockInfo)
+  table.table
+    thead
+      th Coin
+      th.text-right(colspan="3") Market Cap / Price / Vol.$
+    tbody
+      each coin in blockInfo.data
+        tr
+          td
+            a(href=`/coins/${coin.slug}`).media
+              .media-body
+                b.link #{coin.symbol}
+                //- +rank(coin)
+          td.text-right
+            | #{numFormat(coin.marketCapUsd)}
+          td.text-right
+            | #{priceFormat(coin.priceUsd)}
+          td.text-right
+            | #{numFormat(coin.volumeUsd24h)}
+        
+
+mixin renderBlockCoinsGainerLoser(blockInfo) 
+  each val, index in ['positive', 'negative']
+    table.table
+      thead(class=(index == 0 ? 'text-success' : 'text-danger'))
+        tr
+          th
+            if (index == 0)
+              +icon("icons8-up_filled-color", 18)(class="align-middle")
+            else
+              +icon("icons8-down_filled-color", 18)(class="align-middle")
+            =(index == 0 ? 'Top gainers' : 'Top losers')
+          th.text-right 1h
+          th.text-right 24h
+      tbody
+        each coin in (index === 0 ? blockInfo.data.positive : blockInfo.data.negative)
+          tr
+            td(scope='row')
+              a(href=`/coins/${coin.slug}`)
+                //- +coinLogo(coin)
+                b.link.mr-1 #{coin.symbol}
+                br.d-md-none
+                small.text-muted $#{numFormat(coin.priceUsd, `0,0.00`)}
+
+            td.text-right
+              if (index == 0)
+                span.text-success #{coin.percentChange1h}%
+              else
+                span.text-danger #{coin.percentChange1h}%
+            td.text-right
+              if (index == 0)
+                span.text-success #{coin.percentChange24h}%
+              else
+                span.text-danger #{coin.percentChange24h}%

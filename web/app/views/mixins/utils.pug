@@ -1,0 +1,106 @@
+mixin coinLogo(coin)
+  if coin.logo
+    img.rounded(src=`/data/coins/${coin.slug}.jpg?${coin.logo}`, width=`44` height=`44`)&attributes(attributes)
+          
+mixin personPhoto(person, size)
+  if person.photo
+    img.rounded.mr-2(src=`/data/persons/${person.slug}.jpg?${person.photo}`, width=size, height=size)&attributes(attributes)
+             
+mixin profilePic(objData, size)
+  if objData.profilePic
+    img.rounded.mr-2(src=profilePicUrl(objData.profilePic), width=size, height=size)&attributes(attributes)
+  else
+    +icon("icons8-user_male_circle", size)&attributes(attributes)
+    
+mixin likesBlock(objType, objData)
+  - likeData = (objsLikes && objsLikes[objType]) ? objsLikes[objType][objData._id] : null;
+  - objHasLikesData = (typeof(likeData) !== `undefined` && likeData !== null);
+  - likeBtnClass = (objHasLikesData && likeData.userLiked != 0) ? `disabled` : ``;
+  - objHasDislikes = (objType == `comments`);
+  - isUserAuthor = (objData.authorUserId && objData.authorUserId.toString() == curUser._id.toString());
+  - canLike = (objHasLikesData && !isUserAuthor);
+
+  .js-objLikes-container(role="group" data-objType=objType, data-objId=objData._id)&attributes(attributes).btn-group
+    
+    if (objHasDislikes)
+      button.btn.btn-sm.btn-link.d-flex.align-self-center.js-objLike-btn(type=`button`, disabled=(!canLike || likeData.userLiked != 0), data-value=`-1`)
+        +icon("icons8-expand_arrow", 18)(class=(likeData.userLiked == -1 ? `icon-danger`: ``) style="margin: 0 !important;")
+        
+    if(objData.likesSum)
+      button.btn.btn-sm.btn-link.js-objLikes-counter.text-dark(disabled class=(objData.likesSum < 0 ? ``: ``)) #{objData.likesSum}
+    else
+      button.btn.btn-sm.btn-link.js-objLikes-counter.disabled(disabled) 0
+
+    button.btn.btn-sm.btn-link.d-flex.align-self-center.js-objLike-btn(type=`button`, disabled=(!canLike || likeData.userLiked != 0), data-value=`1`)
+      +icon("icons8-collapse_arrow", 18)(class=(likeData.userLiked == 1 ? ``: `icon-success`) style="margin:0 !important;")
+
+mixin authorBlock(authorData, size)
+  if (!size)
+    -var size = 18
+  a.media(href=`/users/${authorData.username}`)&attributes(attributes)
+    +profilePic(authorData, size)(class="rounded-circle mr-2")
+    .media-body: span.link
+      if (authorData.username) 
+        | #{authorData.username}
+      else
+        | user#{authorData._id.toString().substr(-6)}
+    
+mixin filterOptsBlock()
+  form.js-list-filter(action=`${pageBaseUrl}`, method=`get`)
+    ul.nav
+      each group in curFiltersOpts
+        li.nav-item.mr-3
+          ul.nav
+            each filterOpt, filterOptKey in curFiltersOpts
+              if filterOpt.title == group.title
+                li.nav-item
+                  span.nav-link.px-0.disabled
+                    +icon(filterOpt.icon, 16)(class="mt-1 float-left")
+                    span.d-none #{filterOpt.title}:
+                  input(type=`hidden`, name=filterOptKey, value=curFilters[filterOptKey])
+                  each tmpOption, tmpOptionKey in filterOpt.values
+                    li.nav-item
+                      a.nav-link.px-2.js-filterOptVal-link(href=`javascript:void(0);`, data-filterOptKey=filterOptKey, data-filterOptVal=tmpOption.value, class=((curFilters[filterOptKey] == tmpOption.value)?`active`:``)) #{tmpOption.title}
+  
+  
+mixin filterOptsBlockOld()
+  form.js-list-filter(action=`${pageBaseUrl}`, method=`get`)
+    each filterOpt, filterOptKey in curFiltersOpts
+      h5 #{filterOpt.title}
+      select.form-control(name=filterOptKey)
+        each tmpOption, tmpOptionKey in filterOpt.values
+          option(value=tmpOption.value, selected=(curFilters[filterOptKey] == tmpOption.value)) #{tmpOption.title}
+
+mixin rank(rank)
+  if rank.rank
+    small.badge.align-top
+      +icon("icons8-gas", 12)(class="float-left icon-primary")
+      |#{rank.rank}
+
+mixin icon(name, width, height)
+  if(!height)
+    -var height = width
+  svg(class="mr-1 icon icon_" + name, width=width, height=height)&attributes(attributes)
+    use(xlink:href=`/images/icons.svg?${cssVersion}#${name}`)
+
+
+mixin block-set(mixin , blockid)
+  if block
+    - BlockAmbry[mixin] = BlockAmbry[mixin] || {}
+    - BlockAmbry[mixin][blockid] = function() { return block.call(this) };
+
+mixin block-call(mixin , blockid)
+  - BlockAmbry[mixin][blockid].call();
+
+mixin contentLayout(aside)
+  section
+    .container-fluid
+      block
+      if aside
+        .row
+          .col-md-8.col-lg-9
+            main
+              +block-call('contentLayout','layout-left')
+          .col-md-4.col-lg-3
+            aside.js-sidebar.d-none.d-sm-block
+              +block-call('contentLayout','layout-right')

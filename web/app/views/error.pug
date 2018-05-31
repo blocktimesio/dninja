@@ -1,0 +1,11 @@
+extend layout.pug
+
+block content
+  section
+    .container-fluid
+      main
+        section.text-center
+          +icon("icons8-boring-color", 96)(class="mt-1")
+          h1 #{errCode} #{errTitle}
+          p: span.badge.badge-danger Error
+          pre=errDesc

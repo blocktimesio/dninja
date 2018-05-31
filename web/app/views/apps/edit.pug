@@ -1,0 +1,63 @@
+extend ../layout.pug
+
+include ../mixins/formErr
+include ../mixins/actionsHistoryTable
+include ../mixins/objEditHelper
+include ../mixins/objLinksEditHelper
+
+block content
+
+  header
+    .container-fluid
+      h1 #{pageSubtitle}
+      
+  section
+    .container-fluid
+      div.row
+        form.js-form-submit-block(action=`/coins/edit?objId=${editObjId}`, method=`post`, name=`objEdit`)
+          div.form-group
+            label Name
+            input.form-control(type=`text`, name=`name`, value=editData.name)
+            +formErr(`name`)
+          div.form-group
+            label Slug
+            input.form-control(type=`text`, name=`slug`, value=editData.slug)
+            a(href=`javascript:void(0);`, onclick=`generateSlug();`) generate slug
+            +formErr(`slug`)
+          div.form-group
+            label Symbol
+            input.form-control(type=`text`, name=`symbol`, value=editData.symbol)
+            +formErr(`symbol`)
+          div.form-group
+            label Blockchain Explorer Url
+            input.form-control(type=`text`, name=`blockchainExplorerUrl`, value=editData.blockchainExplorerUrl)
+            +formErr(`blockchainExplorerUrl`)
+          div.form-group
+            label Whitepaper Url
+            input.form-control(type=`text`, name=`whitepaperUrl`, value=editData.whitepaperUrl)
+            +formErr(`whitepaperUrl`)
+          div.form-group
+            label About
+            textarea.js-editor-input(name=`about`, style=`display:none;`)
+            div.js-editor !{editData.about}
+            +formErr(`about`)
+            
+          +objLinksEditHelper()
+            
+          button.btn.btn-primary(type=`submit`) Submit
+          
+          if (editObjId > 0 && !editData.deletedAt)
+            input(type=`hidden`, name=`objDel`, value=`0`)
+            button.btn.btn-danger.js-obj-del-btn.pull-right Delete
+        
+      +actionsHistoryTable(actionsHistory)
+      
+    +objEditHelper({
+      titleField: `name`,
+    })
+    
+  script.
+    
+    $(function() {
+      
+    });

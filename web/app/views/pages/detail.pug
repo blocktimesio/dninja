@@ -1,0 +1,11 @@
+extend ../layout.pug
+
+block content
+
+  header
+    h1.headline #{page.title}
+      if userPerms.check(`pageAdd`)
+        a.btn.btn-link(href=`/pages/edit?objIdInt=${page.idInt}`) Edit
+  
+  section
+    section.article !{formatBody(page.body)}

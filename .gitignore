@@ -1,0 +1,14 @@
+.vscode/
+.idea/
+node_modules/
+*.log
+.env
+rsync_code_to_server.sh
+.DS_Store
+**/.DS_Store
+**/gulp-front/
+**/bootstrap/
+jobs/_sys
+.ATStore
+web/app/public/data
+web/app/tmp

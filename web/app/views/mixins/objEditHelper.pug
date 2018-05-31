@@ -1,0 +1,262 @@
+mixin objEditHelper(opts)
+  .
+    <script src="/js/summernote/summernote-bs4.js"></script>
+    <script src="/js/summernote/sanitize-html.min.js?2"></script>
+    <link href="/js/summernote/summernote-bs4.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        
+    
+  script.
+    var formTitleField = '#{opts.titleField}';
+    
+    function slugify (text) {
+      return text.toString().toLowerCase()
+        .replace(/\s+/g, '-')           // Replace spaces with -
+        .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+        .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+        .replace(/^-+/, '')             // Trim - from start of text
+        .replace(/-+$/, '');            // Trim - from end of text
+    }
+
+    function generateSlug () {
+      var titleVal = $('input[name="' + formTitleField + '"]').val();
+      var slug = slugify(titleVal);
+      $('input[name="slug"]').val(slug);
+    }
+
+    function editorImageUpload (file) {
+      data = new FormData();
+      data.append("file", file);
+      $.ajax({
+        data: data,
+        type: 'POST',
+        xhr: function () {
+          var myXhr = $.ajaxSettings.xhr();
+          if (myXhr.upload) myXhr.upload.addEventListener('progress', progressHandlingFunction, false);
+          return myXhr;
+        },
+        url: '/utils/articleImgUpload',
+        cache: false,
+        contentType: false,
+        processData: false,
+        error: function (error) {
+          if (error.status && error.status == 413) {
+            var errOut = '<div class="alert alert-danger js-upload-error">You are trying to upload too big file.</div>';
+            $('.js-editor').before(errOut);
+            setTimeout(function() {
+              $('.js-upload-error').slideUp(150);
+            }, 7500);
+          } else {
+            alert('Error:' + JSON.stringify(error));
+          }
+        },
+        success: function (res) {
+          if (res.error) {
+            alert(res.error);
+          } else {
+            var image = $('<img>').attr('src', res.filepath);
+            $('.js-editor').summernote("insertNode", image[0]);
+          }
+        }
+      });
+    }
+
+    function progressHandlingFunction (e) {
+      var progressElem = $('.js-editor-upload-progress');
+      if (progressElem.length == 0) {
+        $('.js-editor').before('<div class="js-editor-upload-progress progress" style="width:100%;"><div class="progress-bar progress-bar-striped active"></div></div>');
+        progressElem = $('.js-editor-upload-progress');
+      }
+
+      if (e.lengthComputable) {
+        var percDone = Math.round(e.loaded / e.total * 100);
+        progressElem.find('.progress-bar').css('width', percDone + '%');
+        if (e.loaded == e.total) {
+          progressElem.fadeOut(150);
+        }
+      }
+    }
+    
+    function cleanText(text) {
+      text = sanitizeHtml(text, {
+        allowedTags: ['h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol',
+          'nl', 'li', 'b', 'i', 'strong', 'em', 'strike', 'code', 'hr', 'br', 'div',
+          'table', 'thead', 'caption', 'tbody', 'tr', 'th', 'td', 'pre', 'iframe', 'img'],
+        allowedAttributes: {
+          a: ['href', 'name', 'target'],
+          img: ['src'],
+        },
+      });
+      text = text.replace(/[\r\n]+/g, '\n');
+      
+      return text;
+    }
+
+    var EmbedButton = function (context) {
+      var ui = $.summernote.ui;
+      var button = ui.button({
+        contents: '<i class="fa fa-share-alt"/> Embed',
+        tooltip: 'Mark text for embed',
+        click: function () {
+          var range = window.getSelection().getRangeAt(0);
+          var node = $(range.commonAncestorContainer);
+          if (node.parent().is('span')) {
+            node.unwrap();
+          } else {
+            node = $('<span class="link-embed" />')[0];
+            range.surroundContents(node);
+          }
+        }
+      });
+
+      return button.render();
+    }
+
+    var StyleCleanButton = function (context) {
+      var ui = $.summernote.ui;
+      var button = ui.button({
+        contents: 'Clean',
+        tooltip: 'Clean style and html from selected text',
+        click: function () {
+          var range = window.getSelection().getRangeAt(0);
+          var node = $(range.commonAncestorContainer);
+          var text = node[0].innerHTML;
+          text = cleanText(text);
+          node[0].innerHTML = text;
+        }
+      });
+
+      return button.render();
+    }
+
+    $(function() {
+      if ($('input[name="slug"]').length > 0) {
+        var slugIsEmpty = ($('input[name="slug"]').val().length == 0);
+        if (slugIsEmpty) {
+          $('input[name="' + formTitleField + '"]').on('keyup', function () {
+            generateSlug();
+          });
+        }
+      }
+
+      $('.js-obj-del-btn').on('click', function () {
+        if (!confirm('Are you sure that you want to DELETE this object?')) {
+          return false;
+        }
+
+        var parentForm = $(this).closest('form');
+        parentForm.find('input[name="objDel"]').val(1);
+        parentForm.submit();
+      });
+
+      if ($('.js-timepicker').length > 0) {
+        $('.js-timepicker').flatpickr({
+          enableTime: true,
+          time_24hr: true
+        });
+
+        $('.js-datepicker').flatpickr({
+          enableTime: false,
+        });
+      }
+
+      $('.js-editor').summernote({
+        height: 600,
+        toolbar: [
+          ['style2', ['style', 'h1', 'h2', 'blockquote', 'styleClean']],
+          ['style', ['bold', 'italic', 'clear']],
+          ['para', ['ul', 'ol']],
+          ['para2', ['justifyLeft2', 'justifyCenter2', 'justifyRight2']],
+          ['Insert2', ['table']],
+          ['Insert', ['link', 'picture', 'video']],
+          ['bt', ['embed']],
+          ['view', ['fullscreen', 'codeview']],
+        ],
+        buttons: {
+          embed: EmbedButton,
+          styleClean: StyleCleanButton,
+          justifyLeft2: function (context) {
+            var ui = $.summernote.ui;
+            var button = ui.button({
+              contents: '<i class="note-icon-align-left"/>',
+              click: function () {
+                context.invoke('editor.justifyLeft');
+              }
+            });
+            return button.render();
+          },
+          justifyCenter2: function (context) {
+            var ui = $.summernote.ui;
+            var button = ui.button({
+              contents: '<i class="note-icon-align-center"/>',
+              click: function () {
+                context.invoke('editor.justifyCenter');
+              }
+            });
+            return button.render();
+          },
+          justifyRight2: function (context) {
+            var ui = $.summernote.ui;
+            var button = ui.button({
+              contents: '<i class="note-icon-align-right"/>',
+              click: function () {
+                context.invoke('editor.justifyRight');
+              }
+            });
+            return button.render();
+          },
+          blockquote: function (context) {
+            var ui = $.summernote.ui;
+            var button = ui.button({
+              contents: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#212529" style="width: 14px; height: 20px; vertical-align: middle;"><path d="M2 5v9h6c0 3.43-3 6-3 6h3s3-3.43 3-6V5zm11 0v9h6c0 3.43-3 6-3 6h3s3-3.43 3-6V5z"/></svg>',
+              click: function () {
+                context.invoke('editor.formatBlock', 'blockquote');
+              }
+            });
+            return button.render();
+          },
+          h1: function (context) {
+            var ui = $.summernote.ui;
+            var button = ui.button({
+              contents: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#212529" style="width: 20px; height: 20px; vertical-align: middle;"><path d="M2 5v14h2.781v-6h5.438v6H13V5h-2.781v5.688H4.78V5zm19.719 0L16 7.063v2.28l3.25-1.03V19H22V5z"/></svg>',
+              click: function () {
+                context.invoke('editor.formatH1');
+              }
+            });
+            return button.render();
+          },
+          h2: function (context) {
+            var ui = $.summernote.ui;
+            var button = ui.button({
+              contents: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#212529" style="width: 20px; height: 20px; vertical-align: middle;"><path d="M17.375 6.844c-3.129 0-3.469 2.617-3.469 3.281h2c0-1.648 1.207-1.688 1.438-1.688 1.144 0 1.281.997 1.281 1.438 0 1.332-1.777 2.613-4.5 5.719v1.344h6.813v-1.594h-4.282c2.52-2.653 3.969-3.875 3.969-5.656 0-.438-.02-2.844-3.25-2.844zM3 7v10h2.281v-4.281H9.72V17H12V7H9.719v4.063H5.28V7z"/></svg>',
+              click: function () {
+                context.invoke('editor.formatH2');
+              }
+            });
+            return button.render();
+          },
+        },
+        callbacks: {
+          onImageUpload: function (files) {
+            editorImageUpload(files[0]);
+          },
+          onPaste: function (e) {
+            var bufferText = ((e.originalEvent || e).clipboardData || window.clipboardData).getData('text/html');
+            if (!bufferText) {
+              bufferText = ((e.originalEvent || e).clipboardData || window.clipboardData).getData('text');
+            }
+            // cleanText
+            bufferText = cleanText(bufferText);
+            e.preventDefault();
+            document.execCommand('insertHtml', null, bufferText);
+          },
+        },
+      });
+
+      $('form[name="objEdit"]').on('submit', function () {
+        $('.js-editor-input').val($('.js-editor').summernote('code'));
+        $('form button').attr('disabled', true);
+      });
+    });

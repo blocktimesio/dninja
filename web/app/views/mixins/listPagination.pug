@@ -1,0 +1,26 @@
+mixin listPagination()
+  if (listPgOpts.totalPages > 1)
+    - let pageBorders = 3;
+    nav.mb-5
+      ul.pagination.my-0&attributes(attributes)
+        li.page-item(class=(listPgOpts.curPage == 1 ? `disabled` : ``))
+          a.page-link(href=`${listPgOpts.baseUrl}page=${listPgOpts.curPage - 1}`) &larr;
+        
+        - let tmpNum = (listPgOpts.curPage > pageBorders) ? listPgOpts.curPage - pageBorders + 1 : 1;
+        if (tmpNum !== 1)
+          li.page-item.disabled: span.page-link ...
+        
+        while (tmpNum <= (listPgOpts.curPage + pageBorders - 1) && tmpNum <= listPgOpts.totalPages)
+          if (tmpNum == listPgOpts.curPage)
+            li.page-item.active
+              a.page-link #{tmpNum}
+          else
+            li.page-item
+              a.page-link(href=`${listPgOpts.baseUrl}page=${tmpNum}`) #{tmpNum}
+          if (tmpNum == (listPgOpts.curPage + pageBorders - 1) && tmpNum < listPgOpts.totalPages)
+            li.page-item.disabled: span.page-link ...
+          - tmpNum++;
+      
+        li.page-item(class=(listPgOpts.curPage == listPgOpts.totalPages ? `disabled` : ``))
+      
+          a.page-link(href=`${listPgOpts.baseUrl}page=${listPgOpts.curPage + 1}`) &rarr;

@@ -1,0 +1,75 @@
+extend layout.pug
+
+include ./mixins/utils
+include ./mixins/listPagination
+include ./mixins/articles
+include ./mixins/pageBlocks
+
+block variables
+  - var aside = true
+
+block topbar
+  aside.bg-light.py-0
+    div.container-fluid.py-0
+      .row.justify-content-center
+          each coin, index in coinsTop
+            - 
+              let sign = (coin.percentChange24h > 0) ? `+` : ``;
+              let signColor = (coin.percentChange24h > 0) ? `#0b8f00` : `#dc3545`;
+            .d-flex.flex-row
+              if index != 0
+                .d-none.d-lg-flex
+                  span.border.border-right-0.alert-secondary.py-3
+              a.p-3.d-none.d-md-block(href=`/coins/${coin.slug}`)
+                ul.list-inline.mb-0
+                  li.list-inline-item.align-middle
+                    b(title=coin.name) #{coin.symbol}
+                    span(title="Within last 24 hours", style=`color:${signColor};`)
+                  li.list-inline-item.align-middle
+                    if sign == '+'
+                      .media
+                        +icon("icons8-up_filled-color", 18)
+                        .media-body(style=`color:${signColor};`)=coin.percentChange24h
+                          |%
+                    else
+                      .media
+                        +icon("icons8-down_filled-color", 18)
+                        .media-body(style=`color:${signColor};`)=coin.percentChange24h
+                          |%
+                  li.list-inline-item.align-middle
+                    span.text-muted $#{numFormat(coin.priceUsd, `0,0.00`)}
+
+  .border.border-bottom-0
+  
+block content
+  header
+    +filterOptsBlock()
+    hr.mb-0
+
+  if (featuredStories.length > 0)
+    each story in featuredStories
+      +articleRow(story)
+
+  each article, index in lastNews
+    +articleRow(article)
+    
+    if ((index+1) % newsPerStoryBlock == 0)
+      - let storiesI = 0;
+      while (storiesI < storiesPerBlock)
+        if (stories.length > 0)
+          - let story = stories.shift();
+          +articleRow(story, { highlightStories: true, })
+        - storiesI++;
+          
+  +listPagination()(class="pagination-lg")
+
+  script.
+    $(function () {
+      $('.js-list-filter select').on('change', function () {
+        var form = $(this).closest('form');
+        form.submit();
+      });
+    });
+
+block aside
+  +renderPageBlocks()

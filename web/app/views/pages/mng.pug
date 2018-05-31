@@ -1,0 +1,32 @@
+extend ../layout.pug
+
+block content
+  
+  header: .container-fluid
+    h1.headline Pages list
+      a.btn.btn-link(href=`/pages/edit`) Add Page
+    
+  main: .container-fluid: section
+    table.table
+      thead
+        th ID
+        th Title
+        th 
+      tbody
+        each page in pages
+          - authorUserData = lazyDataGet(lazyData, `users`, `_id`, page.authorUserId)
+          - updaterUserData = lazyDataGet(lazyData, `users`, `_id`, page.updatedByUserId)
+          tr
+            td #{page.idInt}
+            td 
+              p 
+                a(href=`/${page.slug}`) #{page.title}
+              if page.deletedAt
+                p Deleted:
+                  span.label.label-danger !{formatDate(page.deletedAt, `relative`)}
+              p updatedAt: !{formatDate(page.updatedAt, `relative`)} by #{updaterUserData.email}
+              p createdAt: !{formatDate(page.createdAt, `relative`)} by #{authorUserData.email}
+            td
+              a.btn.btn-default.btn-sm(href=`/pages/edit?objIdInt=${page.idInt}`) edit
+
+          

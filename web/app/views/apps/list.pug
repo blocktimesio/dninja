@@ -1,0 +1,87 @@
+extend ../layout.pug
+
+include ../mixins/utils
+include ../mixins/listPagination
+include ../mixins/pageBlocks
+
+block variables
+  - var varTitleCount = listPgOpts.total
+  - var aside = false
+
+block content
+  
+  header
+    .row
+      div(class=(headerLeftClasses.join(` `)))
+        h1.headline Apps
+          span.badge.badge-warning.align-top #{varTitleCount}
+      div(class=(headerRightClasses.join(` `)))
+        | Top dapps sorted by DAU
+    
+  section
+    table.table
+      thead
+        th.pl-0 Title
+        th 
+          div Category
+        th 
+          div DAU
+          .badge.badge-light 24h
+        th 
+          div Volume 
+          .badge.badge-light 24h
+        th 
+          div Volume 
+          .badge.badge-light 7d
+        th 
+          div TX 
+          .badge.badge-light 24h
+        th 
+          div TX 
+          .badge.badge-light 7d
+        th.text-right.pr-0(colspan="2")
+          div Changes, %
+          .badge.badge-light 24h &amp; 7d
+      tbody
+        each app in apps
+          tr
+            td.pl-0
+              a(href=`/apps/${app.slug}`).media
+                .media-body
+                  b.link #{app.title}
+                  br
+                  small.text-secondary #{app.description}
+            td
+              | #{app.category}
+            td
+              | #{numFormat(app.dau24h)}
+            td
+              |#{priceFormat(app.volume24h)}
+              br
+              small.text-muted ETH
+            td
+              |#{priceFormat(app.volume7d)}
+              br
+              small.text-muted ETH 
+            td
+              |#{numFormat(app.tx24h)}
+            td
+              |#{numFormat(app.tx7d)}
+            td.text-right
+              if(app.percentChange24h > 0)
+                span.text-success=app.percentChange24h
+              else
+                span.text-danger=app.percentChange24h
+
+            td.text-right.px-0
+              if(app.percentChange24h > 0)
+                span.text-success=app.percentChange7d
+              else
+                span.text-danger=app.percentChange7d
+                  
+  +listPagination()(class="pagination-lg")
+    
+  script.
+    $(function() {
+
+    });

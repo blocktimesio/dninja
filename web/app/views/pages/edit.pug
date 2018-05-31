@@ -1,0 +1,56 @@
+extend ../layout.pug
+
+include ../mixins/formErr
+include ../mixins/actionsHistoryTable
+include ../mixins/objEditHelper
+
+block content
+
+  header
+    .container-fluid
+      h1.headline #{pageSubtitle}
+      
+  main
+    .container-fluid
+      form.js-form-submit-block(action=`/pages/edit?objIdInt=${editObjId}`, method=`post`, name=`objEdit`)
+        section
+          div.form-group
+            label Title
+            input.form-control(type=`text`, name=`title`, value=editData.title)
+            +formErr(`title`)
+          div.form-group
+            label Slug
+            .input-group
+              input.form-control(type=`text`, name=`slug`, value=editData.slug)
+              .input-grou-btn
+                a.btn.btn-link(href=`javascript:void(0);`, onclick=`generateSlug();`) Generate
+            +formErr(`slug`)
+          div.form-group
+            label Body
+            textarea.js-editor-input(name=`body`, style=`display:none;`)
+            div.js-editor !{editData.body}
+            +formErr(`body`)
+          
+        section
+          ui.list-inline
+            li.list-inline-item
+              button.btn.btn-primary(type=`submit`) Submit
+        
+            if (editObjId > 0 && !editData.deletedAt)
+              li.list-inline-item
+                input(type=`hidden`, name=`objDel`, value=`0`)
+                button.btn.btn-danger.js-obj-del-btn.pull-right Delete
+        
+  footer
+    .container-fluid
+      +actionsHistoryTable(actionsHistory)
+      
+    +objEditHelper({
+      titleField: `title`,
+    })
+    
+  script.
+    
+    $(function() {
+      
+    });
